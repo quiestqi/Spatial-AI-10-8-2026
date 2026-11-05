@@ -1,0 +1,19 @@
+Bluehaven · Position + Movement 作业版
+
+1. 解压 ZIP，用 Chrome / Edge / Firefox 打开 index.html。
+2. 右侧 Position + Movement 面板可开关 3D 空间关系标记。
+3. Rat crossing → 立即点 Step：观察跳跃时的 Above 和落地后的 Over。
+4. Front / zone → Start：观察 Toward、In front of、Into。
+5. Behind → Start：观察 Into、Out of、Behind。
+6. Between：查看两栋建筑之间的实时判定，也可 Start 行走。
+7. Reset 恢复初始状态。Distance inspector 内 Auto deliveries → Start 恢复自动送货。
+
+docs 文件夹包括：7 页可编辑 PPTX、跳鼠 GIF、桌面和手机截图、规则说明、浏览器测试报告。
+
+Above 是跳跃中的位置状态；Over 要验证实际轨迹穿过移动中的 Rat、留有高度净空且在另一侧落地。
+原地跳、从 Rat 旁边跳过、Rat 已移动离开路线，都不会被误判为 Over。
+Rat 一直在移动，因此演示应在点 Rat crossing 后立即点 Step；错过可重置再试。
+
+修改版尚未推送或部署。上传时将 index.html、city3d.js、spatial.js、three.min.js 和许可文件放到仓库根目录。
+可一并上传 docs，以分享 PPTX 和 GIF。确认新版网址可用后，再填写作业提交链接。
+封面暂用仓库账号 Wanerrrrr，提交前请改成实际姓名。

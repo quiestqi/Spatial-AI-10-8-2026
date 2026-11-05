@@ -1,0 +1,3 @@
+PASS: continuous off-grid movement, speed bounds, 80 seconds of wall clearance, natural pauses, independent roaming, proximity reactions, charging, reset and deliveries.
+PASS: fixed customer frames and building selections route to exterior entrances.
+PASS: customer frames, Between corridors, Above state, zone transitions, Toward, verified Over, negative jump cases, sample gaps and reset.

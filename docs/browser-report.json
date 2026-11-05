@@ -1,0 +1,27 @@
+{
+  "errors": [],
+  "rat": [
+    "Between",
+    "In front of",
+    "Toward",
+    "Above",
+    "Into",
+    "Over"
+  ],
+  "front": [
+    "Between",
+    "Toward",
+    "In front of",
+    "Into"
+  ],
+  "behind": [
+    "Between",
+    "In front of",
+    "Toward",
+    "Into",
+    "Behind",
+    "Out of"
+  ],
+  "toggle": true,
+  "mobile": true
+}
