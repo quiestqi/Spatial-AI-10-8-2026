@@ -1,0 +1,18 @@
+{
+  "errors": [],
+  "population": {
+    "dogs": 3,
+    "rats": 5,
+    "people": 8
+  },
+  "boost": true,
+  "theft": true,
+  "chase": true,
+  "pause": true,
+  "reset": true,
+  "privateKnowledge": true,
+  "paths": true,
+  "landmarkHeat": true,
+  "legacyAboveOver": true,
+  "mobile": true
+}

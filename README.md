@@ -1,55 +1,59 @@
-# Bluehaven · Position + Movement
+# Bluehaven · Spatial Agents
 
-Publication target: https://quiestqi.github.io/Spatial-AI-10-8-2026/
-Repository: https://github.com/quiestqi/Spatial-AI-10-8-2026
+**Live simulation:** https://quiestqi.github.io/Spatial-AI-10-8-2026/
 
-The capture/deck notes below describe the preparation snapshot before publication. GitHub Pages deployment status determines when this target serves the modified build.
+3 delivery dogs, 5 rats and 8 pedestrians explore the same blue-and-white town with separate goals, finite vision and private spatial memory.
 
-Spatial AI + Computing workshop extension of https://github.com/Wanerrrrr/Spatial-AI-10-8-2026
+## Run
 
-Downloaded baseline: `29f36266769c5b5b76ee00026026cfc07c3ce0f6`.
-Author credit: Wanerrrrr (repository account; replace with your class submission name).
+Open `index.html` locally in a WebGL-enabled browser. The engine, models and scripts are bundled. No build, account or internet connection is needed. Optionally serve this folder with `python3 -m http.server 8000`.
 
-## Run / 本地运行
+Press **Start** to run all actors. **Pause** freezes every actor and all timers, **Step** advances .65 simulation seconds, and **Reset** restores all scores, knowledge and initial meals. Normal / Fast / Slow controls simulation speed.
 
-Unzip and open `index.html` in Chrome, Edge or Firefox with WebGL enabled. Everything needed by the game is local: no build, account, API key or internet connection is needed. Optionally run `python3 -m http.server 8000` here and visit http://localhost:8000.
+## Encounters and scoring
 
-Start/Pause, Step, Reset, speed, automatic deliveries, charging, independent street life, distance queries, camera controls and the existing rat jump are preserved.
+- Every dog starts with **3 meals**. Its score counts completed deliveries.
+- Dog + pedestrian: **hearts and speed ×1.6 for 6 seconds**.
+- Rat + dog: **steal 1 carried meal**. Previously completed deliveries remain credited.
+- Pedestrian + rat: **fist/SHOO icon and 5 seconds of rat escape**.
+- Each pair must separate and pass a **6-second cooldown** before another encounter. Boosts refresh instead of stacking. An empty bag never drops below zero.
+- Empty dogs route to a discovered restaurant and refill to 3 meals so the simulation continues.
 
-The **Position + Movement** panel has a **Show 3D relations** switch. It hides or shows indicators while detection and history continue. Collapse the panel via its heading. Green arrows show the customers' fixed south (+world y) facing; camera orbit does not change their frame. Purple lines show Between; gold shows the jump trajectory and movement; green outlines show Delivery Zones. Spatial history is separate from the mission log and resets with Reset.
+Three example buttons reset the round and place relevant actors close together. The real proximity/occlusion rules still produce the interaction. They do not write a fake success event.
 
-## Reproduce the workshop / 演示
+## Knowledge and collective behavior
 
-Examples reset the mission and place the dog at documented starting points. They do not force predicate results or freeze the rat. Use Normal or Slow speed for class demos.
+Select any K-, R- or P- agent in the menu, or click a model. Every agent has a **120° vision cone with 6-unit range**, blocked by buildings. It independently remembers roads, obstacles, services and recently seen actors. Navigation searches only that private remembered map and explores unknown frontiers when needed.
 
-1. **Rat crossing** → immediately **Step**: dog starts (16,21), jumps toward (16,19), with the rat initially (16,20). Above is visible near the apex; Over is recorded only after a verified crossing and landing. The rat continues roaming, so a delayed start can produce a jump with no Over. Reset/retry is intentional.
-2. **Front / zone** → **Start**: walk from (16,22) to C1 at (16,18). See Toward, In front of and Into. Stop at the customer; Entering a building is never required.
-3. **Behind** → **Start**: walk from (16,21) through C1's zone to (16,16). See Into, Out of and Behind.
-4. **Between**: starts at (12,9), in the open gap between Market Houses and Post Office. Start walks north to (12,7).
-5. **Auto deliveries** in Distance inspector → **Start** returns to the original autonomous mission. **Reset** restores its starting state.
+The panel's minimap always displays the selected agent's knowledge. **Vision cone** shows current sensing. **Selected knowledge only** limits the 3D map to discovered cells/buildings and currently visible actors. **All paths** overlays trajectories (only the selected history in private mode). **Landmark heat** compares independently discovered service landmarks across agents. Individual dog scores and recent encounter events remain visible.
 
-Position is a live state; position history records when it becomes true. Movement records transitions or verified motion, never a label inferred only from an endpoint. Events include session time in seconds. The observer uses rendered positions on every animation frame, including actual airborne height and the moving rat's rendered location.
+Definitions, thresholds and assignment mapping: [docs/agents-assignment.md](docs/agents-assignment.md).
+
+## Original workshop
+
+The toolbar's **Position workshop** button opens the preserved original game: automatic deliveries, charging, distance inspection, camera controls, Rat jumping and the earlier Above/Between/front/back/Into/Out of/Toward/Over examples. Use **Spatial agents** to return to the new assignment.
+
+Above remains a live position state. Over requires a verified trajectory crossing Rat with clearance and landing on the far side. New autonomous dogs reserve landing points, lift before horizontal crossing and keep wall/body clearance.
 
 ## Tests
-
-From this folder:
 
 ```
 node tests/city-life.cjs
 node tests/spatial.cjs
+node tests/agents.cjs
 ```
 
-Both pass. Original tests cover all three deliveries, charging, reset, continuous actor movement and building clearance. Spatial tests cover fixed customer frames, bounded front/back regions, open Between corridors, Above, zone entry/exit, Toward and successful Over; negative cases include stationary jumps, lateral misses, insufficient clearance, a moving rat that leaves the path, and missing samples.
+The new tests cover the exact population and inventories, private/occluded perception, lack of hidden routes, love boosts, theft accounting and contact cooldowns, actual escape movement, deliveries/refill, deterministic replay/reset and 240 simulated seconds of wall/body clearance and meal conservation. The original delivery, city-life and Position/Movement tests remain included.
 
-A real Chromium/WebGL run also verified all eight relation types, 3D loading with no page errors, switching indicators and mobile layout. See `docs/browser-report.json`. Browser regression/recording is available in `tests/browser.cjs`; install Playwright separately if you wish to rerun it (`npm install --no-save playwright`). Set `CHROME_PATH` to your Chrome executable if necessary. Run it from this folder with `node tests/browser.cjs`; output goes to `docs/` and `.test-recording/`.
+`tests/agents-browser.cjs` tests actual Chromium/WebGL behavior, the three demos, pause/reset, private knowledge, paths/heat, mobile layout and return to the original Above/Over demo. Install Playwright separately to rerun (`npm install --no-save playwright`), then run it from this folder. Set `CHROME_PATH` if needed. Browser reports and screenshots are in `docs/`.
 
-## Deliverables / 提交材料
+## Submission materials
 
-- `docs/*.png`: browser screenshots, including mobile layout.
-- `docs/rat-crossing.gif`: actual game recording with a verified crossing.
-- `docs/Bluehaven-Position-Movement.pptx`: editable short deck with diagrams and an embedded animated GIF.
-- `docs/assignment-notes.md`: definitions, thresholds and brief checklist.
+- `docs/agents-*.png`: current agent gameplay, all three interactions, private knowledge, mobile and legacy screenshots.
+- `docs/agents-assignment.md`: rules, assignment coverage and demonstration steps.
+- `docs/agents-browser-report.json` and `docs/agents-test-results.txt`: verification records.
+- Existing `Bluehaven-Position-Movement*.pptx` files and `rat-crossing.gif` describe the earlier Position + Movement assignment; they are retained as earlier workshop materials, not a new Spatial Agents presentation.
 
-This ZIP contains the modified build. **It has not been pushed or deployed.** The existing public site https://wanerrrrr.github.io/Spatial-AI-10-8-2026/ remains the original build until you upload the new files. For GitHub Pages, upload/replace `index.html`, `city3d.js`, `spatial.js`, `three.min.js` and the license file at the repository root. Upload `docs/` too if you want to share the deck and recording. Confirm the updated site before adding its URL to the assignment thread.
+Add actual student/team names when submitting. The account handle **quiestqi** is a repository credit. Post screenshots or a short recording with the simulation URL to the class assignment thread yourself.
 
-Before class submission, replace the repository handle with the actual student name(s) on the deck cover and add the confirmed published URL. The deck identifies the existing site as the source build, not the modified deployment.
+Source town and earlier workshop base: https://github.com/Wanerrrrr/Spatial-AI-10-8-2026 at `29f36266769c5b5b76ee00026026cfc07c3ce0f6`. The modified game publishes in the user's confirmed repository https://github.com/quiestqi/Spatial-AI-10-8-2026 . See THIRD_PARTY_LICENSES.txt for the bundled 3D engine license.

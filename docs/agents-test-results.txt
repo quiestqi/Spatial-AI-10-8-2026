@@ -1,0 +1,5 @@
+PASS: continuous off-grid movement, speed bounds, 80 seconds of wall clearance, natural pauses, independent roaming, proximity reactions, charging, reset and deliveries.
+PASS: fixed customer frames and building selections route to exterior entrances.
+PASS: customer frames, Between corridors, Above state, zone transitions, Toward, verified Over, negative jump cases, sample gaps and reset.
+PASS: 3 dogs / 5 rats / 8 people, finite occluded vision, private memory, no hidden routes, love boost, theft accounting/cooldowns, shoo/flee, deliveries/refill, 240s wall clearance, conservation, replay and reset.
+{"summary":{"time":239.99999999998894,"delivered":39,"onboard":3,"stolen":9,"refilled":42,"counts":{"dogs":3,"rats":5,"people":8}},"eventTypes":["jump","boost","chase","theft","delivery","over","refill"]}

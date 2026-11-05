@@ -1,19 +1,30 @@
-Bluehaven · Position + Movement 作业版
+Bluehaven · Spatial Agents 空间智能体作业版
 
-1. 解压 ZIP，用 Chrome / Edge / Firefox 打开 index.html。
-2. 右侧 Position + Movement 面板可开关 3D 空间关系标记。
-3. Rat crossing → 立即点 Step：观察跳跃时的 Above 和落地后的 Over。
-4. Front / zone → Start：观察 Toward、In front of、Into。
-5. Behind → Start：观察 Into、Out of、Behind。
-6. Between：查看两栋建筑之间的实时判定，也可 Start 行走。
-7. Reset 恢复初始状态。Distance inspector 内 Auto deliveries → Start 恢复自动送货。
+网站：https://quiestqi.github.io/Spatial-AI-10-8-2026/
+本地：解压后打开 index.html，无需安装。
 
-docs 文件夹包括：7 页可编辑 PPTX、跳鼠 GIF、桌面和手机截图、规则说明、浏览器测试报告。
+3 只机器狗、5 只老鼠、8 个行人。每只狗初始携带 3 份外卖。
+成绩只计算成功送达数量。外卖耗尽后，狗会去已发现的餐厅补到 3 份。
 
-Above 是跳跃中的位置状态；Over 要验证实际轨迹穿过移动中的 Rat、留有高度净空且在另一侧落地。
-原地跳、从 Rat 旁边跳过、Rat 已移动离开路线，都不会被误判为 Over。
-Rat 一直在移动，因此演示应在点 Rat crossing 后立即点 Step；错过可重置再试。
+Start / Pause 开始或暂停全部角色及计时；Step 前进一步；Reset 全部重置。
+♥ Speed boost：演示狗遇到行人，显示爱心，速度变为 1.6 倍，持续 6 秒。
+🍱 Steal a meal：演示老鼠偷走狗携带的 1 份外卖，已送达成绩不变。
+👊 Chase rat：演示行人驱赶老鼠，显示拳头/逃跑图标，老鼠逃跑 5 秒。
+连续接触不会每帧重复触发，需要分开，并经过 6 秒冷却。
+演示按钮会重置整轮，然后把相关角色放到附近；互动仍由真实接近触发。
 
-修改版尚未推送或部署。上传时将 index.html、city3d.js、spatial.js、three.min.js 和许可文件放到仓库根目录。
-可一并上传 docs，以分享 PPTX 和 GIF。确认新版网址可用后，再填写作业提交链接。
-封面暂用仓库账号 Wanerrrrr，提交前请改成实际姓名。
+下拉框可以选中任意狗、老鼠、行人，也能直接点击 3D 模型。
+每个角色都有独立的 120° 视野、6 格视距，以及被建筑遮挡的感知。
+角色只用自己发现并记住的道路和地标导航，不会共享全图。
+
+Vision cone：显示当前视野。
+All paths：显示群体路径；个人知识模式下只显示个人路径。
+Landmark heat：显示不同角色共同知道的地标。
+Selected knowledge only：只显示选中角色知道的地图和当前看到的其他角色。
+小地图始终显示所选角色的个人记忆：深色未知、绿色当前可见、蓝色已记住。
+
+顶部 Position workshop 可切回之前的送餐、充电、距离检查、Position + Movement 和跳鼠演示。
+再点 Spatial agents 返回当前作业。
+
+docs/agents-*.png 有新作业截图，docs/agents-assignment.md 有详细规则与作业对应关系。
+旧 Position + Movement 幻灯片仍保留作为上次作业材料。
