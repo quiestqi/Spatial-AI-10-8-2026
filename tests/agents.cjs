@@ -19,7 +19,20 @@ s=create().demo('boost');let dog=s.dogs[0],person=s.people[0];s.interactions();a
 // Theft deducts one carried meal, leaves completed score intact, and re-arms only after separation/cooldown.
 s=create().demo('theft');dog=s.dogs[0];const rat=s.rats[0];dog.delivered=4;s.interactions();assert.equal(dog.inventory,2);assert.equal(dog.delivered,4);assert.equal(rat.stolen,1);for(let i=0;i<100;i++)s.interactions();assert.equal(dog.inventory,2);s.time=7;s.interactions();assert.equal(dog.inventory,2);rat.y=18;s.interactions();rat.y=20.2;s.interactions();assert.equal(dog.inventory,1);s.time=14;rat.y=18;s.interactions();dog.inventory=0;rat.y=20.2;s.interactions();assert.equal(dog.inventory,0);
 // Pedestrian attack produces icons and a genuine escape route; attack takes priority over theft.
-s=create().demo('chase');s.interactions();const fleeing=s.rats[0];assert.equal(fleeing.state,'Fleeing');assert.equal(fleeing.fleeUntil,5);assert(fleeing.icon.includes('RUN'));assert(s.people[0].icon.includes('SHOO'));s.plan(fleeing);assert(fleeing.path.length);const before=distance(fleeing,s.people[0]);s.step(.7);assert(distance(fleeing,s.people[0])>before);assert(fleeing.runDistance>0);
+s=create().demo('chase');
+s.interactions();
+const fleeing=s.rats[0], startledPerson=s.people[0];
+assert.equal(fleeing.state,'Fleeing');
+assert.equal(fleeing.fleeUntil,5);
+assert(fleeing.icon.includes('STARTLED')&&startledPerson.icon.includes('STARTLED'));
+const before=distance(fleeing,startledPerson);
+s.step(.25);
+assert(fleeing.z>.4&&startledPerson.z>.3,'Both actors jump at the same encounter');
+assert.equal(distance(fleeing,startledPerson),before,'Actors pause horizontal movement during the reaction');
+s.step(.65);
+assert.equal(fleeing.z,0);
+assert(fleeing.icon.includes('RUN')&&fleeing.runDistance>0);
+assert(distance(fleeing,startledPerson)>before);
 // Delivery and refill obey capacity; the primary score counts deliveries only.
 s=create();dog=s.dogs[0];let customer=town.places.find(p=>p.id==='c1');Object.assign(dog,{x:customer.x,y:customer.y,goal:{...customer}});s.service(dog);assert.equal(dog.inventory,2);assert.equal(dog.delivered,1);s.time=2;const restaurant=town.places.find(p=>p.id==='r1');Object.assign(dog,{x:restaurant.x,y:restaurant.y,inventory:0,goal:{...restaurant}});s.service(dog);assert.equal(dog.inventory,3);assert.equal(s.totalRefilled,3);
 // Touch cannot occur through a wall even when centers are within the requested contact radius.
@@ -35,3 +48,45 @@ assert(s.summary().delivered>0,'Dogs must deliver autonomously');assert(s.dogs.s
 const replay=create();replay.step(2);const replay2=create();replay2.step(2);assert.deepEqual(replay.snapshot(),replay2.snapshot());
 const summary=s.summary();s.reset();assert.equal(s.summary().delivered,0);assert.equal(s.summary().stolen,0);assert.equal(s.summary().onboard,9);assert.equal(s.events.length,0);
 console.log('PASS: 3 dogs / 5 rats / 8 people, finite occluded vision, private memory, no hidden routes, love boost, theft accounting/cooldowns, shoo/flee, deliveries/refill, 240s wall clearance, conservation, replay and reset.');console.log(JSON.stringify({summary,eventTypes:[...eventTypes]}));
+
+// The bridge is a traversable surface, with water and raised side edges as barriers.
+const terrain=require('../terrain.js').create(town.world);
+const terrainSim=new Simulation({world:town.world,places:town.places,blocks:town.campusBlocks,terrain});
+const deck={x:16,y:20};
+assert.equal(terrainSim.terrainAt(deck),'bridge');
+assert.deepEqual(terrain.landmarks.filter(place=>place.type==='bridge').map(place=>place.x),[8,16]);
+assert.equal(terrainSim.terrainAt({x:30,y:20}),'water');
+for(const x of [8,16]){
+ const north={x,y:19},south={x,y:21};
+ assert.equal(terrainSim.terrainAt(north),'stairs');
+ assert.equal(terrainSim.terrainAt(south),'stairs');
+ assert(terrainSim.elevation({x,y:20})>terrainSim.elevation(north));
+ assert(terrainSim.segment({x,y:18},{x,y:22}),'Both ends of each bridge join a walkable route');
+}
+assert.equal([...terrain.cells.values()].filter(point=>point.y===20).length,town.world[0].length);
+assert(!terrainSim.free({x:13,y:20}));
+assert(!terrainSim.segment({x:13,y:19},{x:13,y:21}));
+for(const formerHill of [{x:16,y:24},{x:10,y:34}]){
+ assert.equal(terrainSim.terrainAt(formerHill),undefined);
+ assert.equal(terrainSim.elevation(formerHill),0);
+}
+assert(!terrainSim.segment({x:14,y:19},{x:15,y:19}));
+assert(terrainSim.segment({x:16,y:19},{x:16,y:27}));
+assert(!terrainSim.dogs[2].knownTerrain.has('16,20'),'Distant agent has not discovered the bridge');
+assert(!terrainSim.dogs[2].landmarks.has('canal-bridge'));
+terrainSim.demo('terrain');
+const touringDog=terrainSim.dogs[0];
+const surfaces=new Set();
+const heights=[];
+for(let tick=0;tick<1200&&!terrainSim.terrainTourDone;tick++){
+ terrainSim.step(1/30);
+ for(const agent of terrainSim.agents)assert(terrainSim.free(agent,agent.radius),'Agents stay on traversable terrain');
+ surfaces.add(terrainSim.terrainAt(touringDog));
+ heights.push(terrainSim.elevation(touringDog));
+}
+assert(terrainSim.terrainTourDone,'Bridge tour reaches the other bank');
+assert(surfaces.has('stairs')&&surfaces.has('bridge'));
+assert(Math.max(...heights)>1&&heights.at(-1)===0);
+assert(touringDog.knownTerrain.has('16,20'));
+assert(touringDog.landmarks.has('canal-bridge'));
+console.log('PASS: traversable stairs and bridge, blocked water/side edges, terrain discovery, and a complete arch bridge crossing and flat former hill sites.');

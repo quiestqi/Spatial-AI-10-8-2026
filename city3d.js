@@ -132,7 +132,31 @@ function drawSpatial(now){
 }
 const distanceLines=new T.Group();city.add(distanceLines);
 const ring=new T.Mesh(new T.RingGeometry(.39,.46,32),new T.MeshBasicMaterial({color:'#316cbe',side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.03;city.add(ring);const semanticGroup=new T.Group();city.add(semanticGroup);
-function updateCamera(){const width=Math.max(1,host.clientWidth),height=Math.max(1,host.clientHeight),aspect=width/height,fit=Math.max((W+H)*.26+3,((W+H)*.36+1)/aspect),size=fit/zoom;camera.left=-size*aspect;camera.right=size*aspect;camera.top=size;camera.bottom=-size;camera.position.set(target.x+Math.sin(angle)*62,62,target.z+Math.cos(angle)*62);camera.lookAt(target);camera.updateProjectionMatrix();renderer.setSize(width,height,false);for(const b of buildings)for(const c of b.children)if(c.isSprite)c.visible=zoom>1.7||['Town Hall','Station House','Blueglass Tower','Old Market','Corner Café'].includes(b.userData.name);for(const g of sites)for(const c of g.children)if(c.isSprite)c.visible=zoom>1.7;}
+let renderWidth=0,renderHeight=0;
+function updateCamera(view){
+ const width=Math.max(1,host.clientWidth),height=Math.max(1,host.clientHeight);
+ const aspect=width/height,fit=Math.max((W+H)*.26+3,((W+H)*.36+1)/aspect);
+ const cameraZoom=view?.zoom??zoom;
+ const showLabels=!view?.closeup;
+ const center=view?.target??target;
+ const size=fit/cameraZoom;
+ camera.left=-size*aspect;
+ camera.right=size*aspect;
+ camera.top=size;
+ camera.bottom=-size;
+ camera.position.set(center.x+Math.sin(angle)*62,62+center.y,center.z+Math.cos(angle)*62);
+ camera.lookAt(center);
+ camera.updateProjectionMatrix();
+ if(width!==renderWidth||height!==renderHeight){
+  renderer.setSize(width,height,false);
+  renderWidth=width;
+  renderHeight=height;
+ }
+ for(const building of buildings)for(const child of building.children)
+  if(child.isSprite)child.visible=showLabels&&(cameraZoom>1.7||['Town Hall','Station House','Blueglass Tower','Old Market','Corner Café'].includes(building.userData.name));
+ for(const site of sites)for(const child of site.children)
+  if(child.isSprite)child.visible=showLabels&&cameraZoom>1.7;
+}
 
 new ResizeObserver(updateCamera).observe(host);
 function disposeGroup(group){while(group.children.length){const c=group.children[0];group.remove(c);c.geometry?.dispose();c.material?.dispose()}}
@@ -140,6 +164,13 @@ function sync(){snapshot=sim.snapshot();syncLife();const dest=sim.navigation();r
 const ray=new T.Raycaster(),pointer=new T.Vector2();let moved=false;host.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY};moved=false;host.setPointerCapture(e.pointerId)});host.addEventListener('pointermove',e=>{if(!drag)return;const delta=e.clientX-drag.x;if(Math.abs(e.clientX-drag.startX)+Math.abs(e.clientY-drag.startY)>5)moved=true;if(e.shiftKey){follow=false;target.x-=delta*.045/zoom;target.z-=(e.clientY-drag.y)*.045/zoom;}else angle-=delta*.008;drag.x=e.clientX;drag.y=e.clientY;updateCamera()});host.addEventListener('pointerup',e=>{if(!moved){const rect=host.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);if(window.agentView?.active()){window.agentView.pick(ray);drag=null;return;}const hits=ray.intersectObjects([...buildings.filter(b=>b.visible),...tiles],true);if(hits.length){let hit=hits[0].object;while(hit&&!hit.userData.cells&&!hit.userData.cell)hit=hit.parent;if(hit?.userData.cells){const building=sim.campusBlocks.find(b=>b.name===hit.userData.name);sim.setDestination({x:building.x,y:building.y})}else if(hit?.userData.cell)sim.setDestination(hit.userData.cell)}}drag=null});host.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.7,Math.min(6,zoom-e.deltaY*.003));updateCamera()},{passive:false});document.getElementById('cameraReset').onclick=()=>{follow=false;target.set(0,0,0);angle=.65;zoom=1;updateCamera()};
 document.getElementById('followDog').onclick=()=>{follow=true;zoom=3.6;const chosen=window.agentView?.active()?window.agentView.selected():snapshot;target.set(chosen.x-CX,0,chosen.y-CZ);updateCamera()};
 const agentView=window.attachAgentsView({T,city,sim,bot,rat,pedestrians,CX,CZ,tiles,buildings,sites,focus:p=>{follow=true;zoom=3.6;target.set(p.x-CX,0,p.y-CZ);updateCamera()}});window.agentView=agentView;
-window.city3D={sync,syncLifeState:()=>{snapshot=sim.snapshot();syncLife()},findDog:()=>document.getElementById('followDog').click(),focusDemo:()=>{follow=false;target.set(-.5,0,-5);zoom=2.4;updateCamera()}};sync();updateCamera();let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.1);last=now;if(agentView.active()){bot.visible=false;rat.visible=false;for(const p of pedestrians.values())p.group.visible=false;reaction.visible=false;reactionKey='';for(const g of [route,distanceLines,semanticGroup,spatialGroup])g.visible=false;const chosen=agentView.frame(now,dt);if(follow){target.lerp(new T.Vector3(chosen.x-CX,0,chosen.y-CZ),1-Math.exp(-dt*6));updateCamera()}renderer.render(scene,camera);return;}agentView.hide();bot.visible=true;for(const g of [route,distanceLines,semanticGroup])g.visible=true;if(lastPos)bot.position.lerp(lastPos,1-Math.exp(-dt*10));const desired=[0,-Math.PI/2,Math.PI,Math.PI/2][snapshot.heading];let delta=Math.atan2(Math.sin(desired-bot.rotation.y),Math.cos(desired-bot.rotation.y));bot.rotation.y+=delta*(1-Math.exp(-dt*12));const moving=lastPos&&bot.position.distanceTo(lastPos)>.015;const gait=moving?Math.sin(now*.014)*.45:0;legs.forEach((leg,i)=>{leg.rotation.x=gait*(i===0||i===3?1:-1)});bot.position.y=moving?Math.abs(Math.sin(now*.014))*.035:0;robotName.material.rotation=0;if(follow&&lastPos){target.lerp(lastPos,1-Math.exp(-dt*6));updateCamera()}animateLife(now,dt);drawSpatial(now);renderer.render(scene,camera)}requestAnimationFrame(animate);
+window.city3D={sync,syncLifeState:()=>{snapshot=sim.snapshot();syncLife()},findDog:()=>document.getElementById('followDog').click(),focusDemo:()=>{follow=false;target.set(-.5,0,-5);zoom=2.4;updateCamera()}};sync();updateCamera();let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-last)/1000,.1);last=now;if(agentView.active()){bot.visible=false;rat.visible=false;for(const p of pedestrians.values())p.group.visible=false;reaction.visible=false;reactionKey='';for(const g of [route,distanceLines,semanticGroup,spatialGroup])g.visible=false;const {agent:chosen,closeup}=agentView.frame(now,dt);
+ if(follow)target.lerp(new T.Vector3(chosen.x-CX,0,chosen.y-CZ),1-Math.exp(-dt*6));
+ updateCamera(closeup?{
+  closeup:true,
+  target:target.clone().lerp(closeup.target,closeup.blend),
+  zoom:T.MathUtils.lerp(zoom,closeup.zoom,closeup.blend),
+ }:undefined);
+ renderer.render(scene,camera);return;}agentView.hide();bot.visible=true;for(const g of [route,distanceLines,semanticGroup])g.visible=true;if(lastPos)bot.position.lerp(lastPos,1-Math.exp(-dt*10));const desired=[0,-Math.PI/2,Math.PI,Math.PI/2][snapshot.heading];let delta=Math.atan2(Math.sin(desired-bot.rotation.y),Math.cos(desired-bot.rotation.y));bot.rotation.y+=delta*(1-Math.exp(-dt*12));const moving=lastPos&&bot.position.distanceTo(lastPos)>.015;const gait=moving?Math.sin(now*.014)*.45:0;legs.forEach((leg,i)=>{leg.rotation.x=gait*(i===0||i===3?1:-1)});bot.position.y=moving?Math.abs(Math.sin(now*.014))*.035:0;robotName.material.rotation=0;if(follow&&lastPos){target.lerp(lastPos,1-Math.exp(-dt*6));updateCamera()}animateLife(now,dt);drawSpatial(now);renderer.render(scene,camera)}requestAnimationFrame(animate);
 }catch(error){console.error(error);window.show3DError('The 3D scene could not start. This simulation requires WebGL / hardware acceleration. Try reloading or use another browser.');}
 })();
