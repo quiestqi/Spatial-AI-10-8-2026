@@ -1,59 +1,57 @@
-# Bluehaven · Spatial Agents
+# Bluehaven · Environment Lab
 
-**Live simulation:** https://quiestqi.github.io/Spatial-AI-10-8-2026/
+**Live simulation:** https://quiestqi.github.io/Spatial-AI-10-8-2026/ (after you publish this version)
 
-3 delivery dogs, 5 rats and 8 pedestrians explore the same blue-and-white town with separate goals, finite vision and private spatial memory.
+Delivery dogs, rats and pedestrians share the 3D town of Bluehaven, drawn with toon (cel-shaded) materials on a real terrain. The Environment Lab is an environment-design tool: you generate or hand-build variations of the town, watch the surface and the rats' underground side by side, or let the computer evolve towns over epochs. Each town is scored by delivery success rate and delivery time.
 
 ## Run
 
-Open `index.html` locally in a WebGL-enabled browser. The engine, models and scripts are bundled. No build, account or internet connection is needed. Optionally serve this folder with `python3 -m http.server 8000`.
+Open `index.html` in a WebGL browser (no build, no internet needed), or serve the folder with `python3 -m http.server 8000`.
 
-Press **Start** to run all actors. **Pause** freezes every actor and all timers, **Step** advances .65 simulation seconds, and **Reset** restores all scores, knowledge and initial meals. Normal / Fast / Slow controls simulation speed.
+- **Start / Pause / Step / Reset** in the toolbar drive the simulation. Speed: Normal 4×, Fast 15×, Slow 1×.
+- Drag to orbit, Shift-drag to pan, scroll to zoom. *Town view* resets the camera, *Find dog* follows the selected agent.
+- **Position workshop** switches to the original delivery / charging / Position + Movement game. **Environment Lab** switches back.
 
-## Encounters and scoring
+## Lab panel
 
-- Every dog starts with **3 meals**. Its score counts completed deliveries.
-- Dog + pedestrian: **hearts and speed ×1.6 for 6 seconds**.
-- Rat + dog: **steal 1 carried meal**. Previously completed deliveries remain credited.
-- Pedestrian + rat: **fist/SHOO icon and 5 seconds of rat escape**.
-- Each pair must separate and pass a **6-second cooldown** before another encounter. Boosts refresh instead of stacking. An empty bag never drops below zero.
-- Empty dogs route to a discovered restaurant and refill to 3 meals so the simulation continues.
+- **Simulate.** One town, shown as a split 3D view: the **surface** on the left (smooth terrain with hills, contour lines, lawns, a sunken canal and the toon-shaded town) and the rats' **underground** on the right (soil, rock, tunnels, nests, holes, and the outlines of the buildings above).
+  - Switch to Surface or Underground alone. Surface layers: Terrain & town · Robot learning map · Rat learning map · Elevation & slope.
+  - Pick any seed (0 = original town) or 🎲. The card shows success rate, average delivery time, delivered/stolen/late, holes, and the most urgent orders with countdown bars; every house with an order shows a countdown badge.
+  - Click any dog, rat, pedestrian or cell, on the surface or underground, to inspect it.
+- **Evolve** (automated option). Set a seed and a number of epochs; each epoch is one generated and evaluated environment. Charts show success rate and delivery time, and a table lists each mutation. Load any epoch into the town or into Build, or restart with a new seed.
+- **Build.** Paint directly on the 3D town:
+  - terrain raise / lower / smooth / level
+  - lawn / pave, underground rock / soil
+  - make a building a restaurant or a house
 
-Three example buttons reset the round and place relevant actors close together. The real proximity/occlusion rules still produce the interaction. They do not write a fake success event.
+  Live checks show street connectivity and houses that robots can't reach. JSON export/import, *Quick evaluate*, *Run this town*.
+- **Rules.** The influence diagram between the three agent types, plus the rule summary.
 
-## Knowledge and collective behavior
+## What the agents do
 
-Select any K-, R- or P- agent in the menu, or click a model. Every agent has a **120° vision cone with 6-unit range**, blocked by buildings. It independently remembers roads, obstacles, services and recently seen actors. Navigation searches only that private remembered map and explores unknown frontiers when needed.
+- **Rats** start gathered in nests under the restaurants (3 each). There are no holes at first. A hungry rat that smells a restaurant within 6 cells uses the nearest hole or digs a new one. Above ground it steals the meal from any delivery dog it touches.
+- **Pedestrians** start at random house doors and walk randomly. They plug every hole they see and shoo every rat they touch; a shooed rat runs for a hole or digs an emergency one.
+- **Delivery dogs** know the streets but not the rats. Rats and holes they see go into a shared learning map, and while carrying a meal they route around it. They always yield to pedestrians.
+- **Terrain.** Hills come with real slopes (dogs ≤ 20%, people ≤ 45%, rats any). Hills and buildings block sight. The underground layer 3 m down holds soil, rock, tunnels and nests, and the canal blocks tunnels.
+- **Movement** is grid by grid: one cell (4 m) per step, with slope-dependent step time.
+- **Orders:** 20 per round. Each house with an order shows a countdown badge (240 s). Running out marks the order late, which is a failure; the countdown is not otherwise a penalty.
 
-The panel's minimap always displays the selected agent's knowledge. **Vision cone** shows current sensing. **Selected knowledge only** limits the 3D map to discovered cells/buildings and currently visible actors. **All paths** overlays trajectories (only the selected history in private mode). **Landmark heat** compares independently discovered service landmarks across agents. Individual dog scores and recent encounter events remain visible.
-
-Definitions, thresholds and assignment mapping: [docs/agents-assignment.md](docs/agents-assignment.md).
-
-## Original workshop
-
-The toolbar's **Position workshop** button opens the preserved original game: automatic deliveries, charging, distance inspection, camera controls, Rat jumping and the earlier Above/Between/front/back/Into/Out of/Toward/Over examples. Use **Spatial agents** to return to the new assignment.
-
-Above remains a live position state. Over requires a verified trajectory crossing Rat with clearance and landing on the far side. New autonomous dogs reserve landing points, lift before horizontal crossing and keep wall/body clearance.
+Full definitions are in the semantic model: [docs/semantic-model.md](docs/semantic-model.md).
 
 ## Tests
 
 ```
-node tests/city-life.cjs
-node tests/spatial.cjs
-node tests/agents.cjs
+node tests/lab.cjs        # Environment Lab engine (16 checks)
+node tests/city-life.cjs  # original delivery game
+node tests/spatial.cjs    # Position + Movement predicates
+node tests/agents.cjs     # earlier spatial-agents engine (agents.js, kept for reference)
 ```
 
-The new tests cover the exact population and inventories, private/occluded perception, lack of hidden routes, love boosts, theft accounting and contact cooldowns, actual escape movement, deliveries/refill, deterministic replay/reset and 240 simulated seconds of wall/body clearance and meal conservation. The original delivery, city-life and Position/Movement tests remain included.
+## Files
 
-`tests/agents-browser.cjs` tests actual Chromium/WebGL behavior, the three demos, pause/reset, private knowledge, paths/heat, mobile layout and return to the original Above/Over demo. Install Playwright separately to rerun (`npm install --no-save playwright`), then run it from this folder. Set `CHROME_PATH` if needed. Browser reports and screenshots are in `docs/`.
+- `lab-engine.js`: deterministic rules, maps, seeds, mutations, evaluation and evolution (no DOM; runs in Node).
+- `lab3d-view.js`: draws the lab in the original 3D town and builds the panel.
+- `city3d.js`, `terrain.js`, `spatial.js`: the original town scene, canal/bridges and Position + Movement workshop.
+- `docs/`: semantic model, earlier assignment notes, screenshots and decks.
 
-## Submission materials
-
-- `docs/agents-*.png`: current agent gameplay, all three interactions, private knowledge, mobile and legacy screenshots.
-- `docs/agents-assignment.md`: rules, assignment coverage and demonstration steps.
-- `docs/agents-browser-report.json` and `docs/agents-test-results.txt`: verification records.
-- Existing `Bluehaven-Position-Movement*.pptx` files and `rat-crossing.gif` describe the earlier Position + Movement assignment; they are retained as earlier workshop materials, not a new Spatial Agents presentation.
-
-Add actual student/team names when submitting. The account handle **quiestqi** is a repository credit. Post screenshots or a short recording with the simulation URL to the class assignment thread yourself.
-
-Source town and earlier workshop base: https://github.com/Wanerrrrr/Spatial-AI-10-8-2026 at `29f36266769c5b5b76ee00026026cfc07c3ce0f6`. The modified game publishes in the user's confirmed repository https://github.com/quiestqi/Spatial-AI-10-8-2026 . See THIRD_PARTY_LICENSES.txt for the bundled 3D engine license.
+Source town and earlier workshop base: https://github.com/Wanerrrrr/Spatial-AI-10-8-2026 at `29f36266769c5b5b76ee00026026cfc07c3ce0f6`. See THIRD_PARTY_LICENSES.txt for the bundled 3D engine license. Add real student/team names when submitting.

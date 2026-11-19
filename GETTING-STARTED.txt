@@ -1,0 +1,15 @@
+Bluehaven · Environment Lab: Getting started
+
+1. Unzip and open index.html in a browser (Chrome / Safari / Edge with WebGL). No install needed.
+2. Press Start. The surface (left) and the rats' underground (right) run side by side.
+3. Lab panel (right):
+   - Simulate: pick a seed (0 = original town) or 🎲; switch surface layers (Terrain, Robot learning
+     map, Rat learning map, Elevation); click any agent or cell to inspect it.
+   - Evolve: run N epochs; compare success rate and delivery time; load any epoch into the town or Build.
+   - Build: click on the 3D town to raise/lower terrain, paint lawns, underground rock/soil,
+     or turn buildings into restaurants/houses. Export/Import JSON. Quick evaluate.
+   - Rules: how pedestrians, rats and delivery dogs affect each other.
+4. "Position workshop" in the toolbar opens the original delivery / Position + Movement game.
+
+Rules and definitions: docs/semantic-model.md
+Tests: node tests/lab.cjs
